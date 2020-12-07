@@ -1,0 +1,18 @@
+#!/bin/bash
+# Create btrfs snapshot of root sub volume
+echo "[*] Creating btrfs snapshot of root"
+sudo snapper -c root create --description "pkcon update"
+echo "[+] Snapshot created successfully"
+
+# Refresh mirrors
+/usr/bin/pkcon -p refresh force
+
+# Download updates. Capture last line of output
+UPDATE_OUTPUT=$(/usr/bin/pkcon update -p -n --only-download | tail -1)
+if [ "$UPDATE_OUTPUT" != "No packages require updating to newer versions." ] ;then
+    echo "[*] Updates available, ready to install."
+	# Set offline update trigger
+	/usr/bin/pkcon offline-trigger
+	/usr/bin/notify-send -t 0 "New updates are ready" "Reboot system to install"
+fi
+
