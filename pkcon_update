@@ -1,8 +1,48 @@
 #!/bin/bash
-# Create btrfs snapshot of root sub volume
-echo "[*] Creating btrfs snapshot of root"
-sudo snapper -c root create --description "pkcon update"
-echo "[+] Snapshot created successfully"
+
+Help()
+{
+   # Display Help
+   echo "Download available updates and make them ready for offline installation"
+   echo
+   echo "Syntax: pkcon [-b]"
+   echo "options:"
+   echo "-b, --btrfs     Create btrfs snapshot for the root subvolume. Optionally supply the desired subvolume. 
+                'root' assumed otherwise. Requires snapper"
+   echo "-h, --help      Display this help and exit."
+   echo
+}
+
+# Process arguments.
+while (( "$#" )); do
+  case "$1" in
+    -b|--btrfs)
+        BTRFS_SNAPSHOTS=true
+        if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
+            BTRFS_VOL=$2
+            shift 2
+        else
+            BTRFS_VOL="root"
+            shift
+        fi
+        ;;
+    -h|--help)
+        Help
+        exit 1
+        ;;
+    -*|--*=) # unsupported flags
+        Help
+        exit 1
+        ;;
+  esac
+done
+
+if [ "$BTRFS_SNAPSHOTS" = true ] ; then
+    # Create btrfs snapshot (root subvolume by default)
+    echo "[*] Creating btrfs snapshot of $BTRFS_VOL"
+    sudo snapper -c $BTRFS_VOL create --description "pkcon update"
+    echo "[+] Snapshot created successfully"
+fi
 
 # Refresh mirrors
 /usr/bin/pkcon -p refresh force
